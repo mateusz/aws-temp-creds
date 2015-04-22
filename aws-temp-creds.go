@@ -1,9 +1,18 @@
+/*
+	Package awstempcreds contains helpers for temporary STS credentials.
+
+	TempCredentialsProvider obtains temporary credentials,
+	and makes sure they are rolled over before expiry.
+
+	This package is not safe for multithreaded use.
+*/
 package awstempcreds
 
 import (
 	"fmt"
 	"github.com/awslabs/aws-sdk-go/aws"
 	"github.com/awslabs/aws-sdk-go/service/sts"
+	"log"
 	"os"
 	"time"
 )
@@ -41,7 +50,8 @@ func (p *TempCredentialsProvider) Credentials() (*aws.Credentials, error) {
 	if time.Now().After(p.nextRefresh) {
 		err := p.Refresh()
 		if err != nil {
-			// Retry sooner than p.Duration.
+			// Retry next time around - don't wait for p.Duration to elapse.
+			log.Printf("TempCredentialsProvider failed to refresh credentials: %s\n", err)
 			return nil, err
 		}
 
